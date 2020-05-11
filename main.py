@@ -1,3 +1,6 @@
+import os
+
+import requests
 from flask import Flask, render_template, request, make_response, jsonify, abort, session
 from flask_login import LoginManager, login_user, login_required, logout_user, current_user
 from flask_wtf import FlaskForm
@@ -5,6 +8,7 @@ from werkzeug.utils import redirect
 from wtforms import PasswordField, StringField, TextAreaField, SubmitField, BooleanField
 from wtforms.fields.html5 import EmailField
 import sqlite3
+import shutil
 
 # noinspection PyUnresolvedReferences
 from wtforms.validators import DataRequired
@@ -131,8 +135,8 @@ def add(goods_id):
     conn = sqlite3.connect('db/shop2.sqlite')
     cur = conn.cursor()
     sql = f"""
-    UPDATE goods 
-    SET value = {goods.value + 1}
+    UPDATE orders 
+    SET value = value + 1
     WHERE id = {goods.id}
     """
     cur.execute(sql)
@@ -154,14 +158,6 @@ def add(goods_id):
         conn.commit()
     else:
         zn[sp][-1] += 1
-        conn = sqlite3.connect('db/shop2.sqlite')
-        cur = conn.cursor()
-        sql = f"""
-            UPDATE orders 
-            SET value = {goods.value + 1} WHERE id = {goods.id}
-            """
-        cur.execute(sql)
-        conn.commit()
 
     session['add'] = zn
 
@@ -174,25 +170,25 @@ def basket():
         button = request.form['button']
         but = int(button.split()[1])
         sessions = db_session.create_session()
-        goods = sessions.query(Goods).filter(Goods.id == but).first()
+        orders = sessions.query(Goods).filter(Goods.id == but).first()
         if button.split()[0] == '2':
             conn = sqlite3.connect('db/shop2.sqlite')
             cur = conn.cursor()
             sql = f"""
-                UPDATE goods 
-                SET value = {goods.value + 1}
-                WHERE id = {goods.id}
+                UPDATE orders 
+                SET value = value + 1
+                WHERE id = {orders.id}
                 """
             cur.execute(sql)
             conn.commit()
         if button.split()[0] == '1':
             conn = sqlite3.connect('db/shop2.sqlite')
             cur = conn.cursor()
-            if goods.value - 1 >= 0:
+            if orders.value - 1 >= 0:
                 sql = f"""
-                    UPDATE goods 
-                    SET value = {goods.value - 1}
-                    WHERE id = {goods.id}
+                    UPDATE orders 
+                    SET value = value - 1
+                    WHERE id = {orders.id}
                     """
                 cur.execute(sql)
                 conn.commit()
@@ -203,6 +199,10 @@ def basket():
     else:
         goods = []
         message = 'Ваша карзина пуста'
+    sessions = db_session.create_session()
+    orders = sessions.query(Orders).all()
+    for i in range(len(orders)):
+        goods[i][-1] = orders[i].value
     print(goods)
     return render_template("basket.html", goods=goods, message=message)
 
@@ -212,15 +212,6 @@ def clear():
     if 'add' in session:
         session['add'] = []
     goods = session['add']
-    conn = sqlite3.connect('db/shop2.sqlite')
-    cur = conn.cursor()
-    sql = """
-        UPDATE goods 
-        SET value = 0
-        WHERE value != 0
-        """
-    cur.execute(sql)
-    conn.commit()
 
     conn = sqlite3.connect('db/shop2.sqlite')
     cur = conn.cursor()
@@ -247,16 +238,6 @@ def order():
 
     conn = sqlite3.connect('db/shop2.sqlite')
     cur = conn.cursor()
-    sql = """
-            UPDATE goods 
-            SET value = 0
-            WHERE value != 0
-            """
-    cur.execute(sql)
-    conn.commit()
-
-    conn = sqlite3.connect('db/shop2.sqlite')
-    cur = conn.cursor()
     sql = """DELETE FROM orders"""
     cur.execute(sql)
     conn.commit()
@@ -266,6 +247,19 @@ def order():
 
 @app.route('/map')
 def map():
+    coords = '37.74164199829102,55.78153275636508'
+    mash = 16
+    mark = '37.74164199829102,55.78153275636508,pm2rdm'
+    map_request = 'https://static-maps.yandex.ru/1.x/?l=map&pt=' + mark + ',' + '&z=' + str(mash)
+    response = requests.get(map_request)
+    map_file = 'map.png'
+    with open(map_file, "wb") as file:
+        file.write(response.content)
+
+    sourse = os.getcwd() + '/map.png'
+    dest = os.getcwd() + '/static/img/map.png'
+    print(sourse)
+    shutil.move(sourse, dest)
     return render_template('map.html')
 
 
