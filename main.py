@@ -49,7 +49,7 @@ def load_user(user_id):
 
 
 def main():
-    db_session.global_init("db/shop2.sqlite")
+    db_session.global_init("db/shop.sqlite")
     app.run(port=8014, host='127.0.0.1')
 
 
@@ -132,7 +132,7 @@ def add(goods_id):
         zn = session['add']
     else:
         zn = []
-    conn = sqlite3.connect('db/shop2.sqlite')
+    conn = sqlite3.connect('db/shop.sqlite')
     cur = conn.cursor()
     sql = f"""
     UPDATE orders 
@@ -148,7 +148,7 @@ def add(goods_id):
             sp = i
     if ok:
         zn.append([goods.id, goods.name, goods.image, goods.coast, goods.value])
-        conn = sqlite3.connect('db/shop2.sqlite')
+        conn = sqlite3.connect('db/shop.sqlite')
         cur = conn.cursor()
         sql = f"""
             INSERT INTO orders 
@@ -172,7 +172,7 @@ def basket():
         sessions = db_session.create_session()
         orders = sessions.query(Goods).filter(Goods.id == but).first()
         if button.split()[0] == '2':
-            conn = sqlite3.connect('db/shop2.sqlite')
+            conn = sqlite3.connect('db/shop.sqlite')
             cur = conn.cursor()
             sql = f"""
                 UPDATE orders 
@@ -182,7 +182,7 @@ def basket():
             cur.execute(sql)
             conn.commit()
         if button.split()[0] == '1':
-            conn = sqlite3.connect('db/shop2.sqlite')
+            conn = sqlite3.connect('db/shop.sqlite')
             cur = conn.cursor()
             if orders.value - 1 >= 0:
                 sql = f"""
@@ -213,7 +213,7 @@ def clear():
         session['add'] = []
     goods = session['add']
 
-    conn = sqlite3.connect('db/shop2.sqlite')
+    conn = sqlite3.connect('db/shop.sqlite')
     cur = conn.cursor()
     sql = """DELETE FROM orders"""
     cur.execute(sql)
@@ -236,7 +236,7 @@ def order():
         session['add'] = []
     goods = session['add']
 
-    conn = sqlite3.connect('db/shop2.sqlite')
+    conn = sqlite3.connect('db/shop.sqlite')
     cur = conn.cursor()
     sql = """DELETE FROM orders"""
     cur.execute(sql)
